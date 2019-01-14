@@ -31,6 +31,7 @@ pub struct Build {
     pub out_dir: PathBuf,
     pub bindgen: Option<Download>,
     pub cache: Cache,
+    pub cargo_opts: Vec<PathBuf>,
 }
 
 /// The `BuildMode` determines which mode of initialization we are running, and
@@ -120,6 +121,11 @@ pub struct BuildOptions {
     #[structopt(long = "out-dir", short = "d", default_value = "pkg")]
     /// Sets the output directory with a relative path.
     pub out_dir: String,
+
+    #[structopt(name = "CARGO_OPTS", parse(from_os_str))]
+    /// Arguments for cargo, ex: wasm-pack build -- --color=always
+    /// With that, cargo will receive the color = always.
+    pub cargo_opts: Vec<PathBuf>,
 }
 
 impl Default for BuildOptions {
@@ -135,6 +141,7 @@ impl Default for BuildOptions {
             release: false,
             profiling: false,
             out_dir: String::new(),
+            cargo_opts: vec![],
         }
     }
 }
@@ -175,6 +182,7 @@ impl Build {
             out_dir,
             bindgen: None,
             cache: Cache::new()?,
+            cargo_opts: build_opts.cargo_opts,
         })
     }
 
@@ -283,7 +291,11 @@ impl Build {
 
     fn step_build_wasm(&mut self, step: &Step, log: &Logger) -> Result<(), Error> {
         info!(&log, "Building wasm...");
-        build::cargo_build_wasm(log, &self.crate_path, self.profile, step)?;
+        let msg = format!("{:?}", self.cargo_opts);
+        PBAR.step(step, &msg);
+        // println!("alksjdfajskldfjlaksdjfklasjdfklasjdfklajdfklasjdfklasjdfkljasdfkljasdfklj");
+        // info!(&log, "cargo_opts: {:?}", self.cargo_opts);
+        build::cargo_build_wasm(log, &self.crate_path, self.profile, step, &self.cargo_opts)?;
 
         info!(
             &log,

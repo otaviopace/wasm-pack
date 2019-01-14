@@ -6,7 +6,7 @@ use emoji;
 use failure::{Error, ResultExt};
 use progressbar::Step;
 use slog::Logger;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::str;
 use PBAR;
@@ -68,6 +68,7 @@ pub fn cargo_build_wasm(
     path: &Path,
     profile: BuildProfile,
     step: &Step,
+    cargo_opts: &Vec<PathBuf>,
 ) -> Result<(), Error> {
     let msg = format!("{}Compiling to WASM...", emoji::CYCLONE);
     PBAR.step(step, &msg);
@@ -90,6 +91,11 @@ pub fn cargo_build_wasm(
             // debug info by default.
         }
     }
+
+    for cargo_option in cargo_opts {
+        cmd.arg(cargo_option);
+    }
+
     cmd.arg("--target").arg("wasm32-unknown-unknown");
     child::run(log, cmd, "cargo build").context("Compiling your crate to WebAssembly failed")?;
     Ok(())
